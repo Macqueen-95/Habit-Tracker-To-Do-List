@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tasks - Habit Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="tasks">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">FlowTrack</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-link" data-nav="dashboard">Dashboard</a>
+                <a href="tasks.html" class="nav-link" data-nav="tasks">Tasks</a>
+                <a href="habits.html" class="nav-link" data-nav="habits">Habits</a>
+                <a href="analytics.html" class="nav-link" data-nav="analytics">Analytics</a>
+                <a href="settings.html" class="nav-link" data-nav="settings">Settings</a>
+            </nav>
+            <button class="btn ghost" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>Task Manager</h1>
+                <p class="muted">Add, track, and prioritize your work.</p>
+            </header>
+
+            <section class="panel">
+                <h2>Add Task</h2>
+                <div class="grid-2">
+                    <input type="text" id="taskNameInput" placeholder="Task title">
+                    <input type="date" id="taskDeadlineInput">
+                </div>
+                <div class="grid-3">
+                    <select id="taskPriorityInput">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select id="taskCategoryInput">
+                        <option value="Study">Study</option>
+                        <option value="Work">Work</option>
+                        <option value="Health">Health</option>
+                        <option value="Personal">Personal</option>
+                    </select>
+                    <button class="btn primary" onclick="addTaskFromTasksPage()">Add Task</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="row-between">
+                    <h2>All Tasks</h2>
+                    <select id="taskFilter" onchange="renderTasksPage()" class="small-select">
+                        <option value="all">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                <ul id="tasksPageList" class="item-list"></ul>
+            </section>
+
+            <section class="panel react-panel">
+                <div class="row-between">
+                    <h2>React Task Board</h2>
+                    <span class="muted">Built with React + LocalStorage</span>
+                </div>
+                <div id="reactTaskRoot"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+        function ReactTaskBoard() {
+            const [tasks, setTasks] = React.useState([]);
+            const [searchText, setSearchText] = React.useState("");
+            const [viewMode, setViewMode] = React.useState("all");
+
+            const reloadTasks = React.useCallback(() => {
+                const state = typeof getAppState === "function" ? getAppState() : null;
+                const userTasks = state && state.user && Array.isArray(state.user.tasks) ? state.user.tasks : [];
+                const ordered = [...userTasks].sort((a, b) => {
+                    if (a.completed === b.completed) return a.deadline.localeCompare(b.deadline);
+                    return a.completed - b.completed;
+                });
+                setTasks(ordered);
+            }, []);
+
+            React.useEffect(() => {
+                reloadTasks();
+                window.addEventListener("focus", reloadTasks);
+                return () => window.removeEventListener("focus", reloadTasks);
+            }, [reloadTasks]);
+
+            const filteredTasks = tasks.filter((task) => {
+                const matchesSearch = task.name.toLowerCase().includes(searchText.toLowerCase());
+                if (!matchesSearch) return false;
+
+                if (viewMode === "pending") return !task.completed;
+                if (viewMode === "completed") return task.completed;
+                if (viewMode === "high") return task.priority === "High";
+                return true;
+            });
+
+            const doneCount = tasks.filter((task) => task.completed).length;
+            const pendingCount = tasks.length - doneCount;
+
+            const handleToggle = (taskId) => {
+                if (typeof toggleTaskById === "function") {
+                    toggleTaskById(taskId);
+                    reloadTasks();
+                    if (typeof renderTasksPage === "function") {
+                        renderTasksPage();
+                    }
+                }
+            };
+
+            return (
+                <div className="react-task-app">
+                    <div className="react-task-toolbar">
+                        <input
+                            type="text"
+                            className="react-input"
+                            placeholder="Search tasks..."
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                        />
+                        <select className="react-select" value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
+                            <option value="all">All</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="high">High Priority</option>
+                        </select>
+                    </div>
+
+                    <div className="react-stats-row">
+                        <div className="react-stat-chip">Total: {tasks.length}</div>
+                        <div className="react-stat-chip">Completed: {doneCount}</div>
+                        <div className="react-stat-chip">Pending: {pendingCount}</div>
+                    </div>
+
+                    <div className="react-task-list">
+                        {filteredTasks.length === 0 && (
+                            <p className="muted react-empty">No tasks match this view.</p>
+                        )}
+
+                        {filteredTasks.map((task) => (
+                            <div key={task.id} className={`react-task-card ${task.completed ? "is-done" : ""}`}>
+                                <div>
+                                    <p className="react-task-title">{task.name}</p>
+                                    <p className="react-task-meta">{task.category} | {task.priority} | Due {task.deadline}</p>
+                                </div>
+                                <button
+                                    className="btn primary react-done-btn"
+                                    type="button"
+                                    onClick={() => handleToggle(task.id)}
+                                >
+                                    {task.completed ? "Undo" : "Done"}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const rootEl = document.getElementById("reactTaskRoot");
+            if (!rootEl || !window.React || !window.ReactDOM) return;
+
+            const root = ReactDOM.createRoot(rootEl);
+            root.render(<ReactTaskBoard />);
+        });
+    </script>
+</body>
+</html>

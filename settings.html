@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings - Habit Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="settings">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">FlowTrack</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-link" data-nav="dashboard">Dashboard</a>
+                <a href="tasks.html" class="nav-link" data-nav="tasks">Tasks</a>
+                <a href="habits.html" class="nav-link" data-nav="habits">Habits</a>
+                <a href="analytics.html" class="nav-link" data-nav="analytics">Analytics</a>
+                <a href="settings.html" class="nav-link" data-nav="settings">Settings</a>
+            </nav>
+            <button class="btn ghost" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>Settings</h1>
+                <p class="muted">Manage your profile and preferences.</p>
+            </header>
+
+            <section class="panel">
+                <h2>Profile</h2>
+                <p>Username: <strong id="settingsUsername">-</strong></p>
+            </section>
+
+            <section class="panel">
+                <h2>Preferences</h2>
+                <div class="grid-2">
+                    <div>
+                        <label for="themeSelect">Theme</label>
+                        <select id="themeSelect">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="dailyGoalInput">Daily Goal (tasks)</label>
+                        <input type="number" id="dailyGoalInput" min="1" max="20">
+                    </div>
+                </div>
+                <button class="btn primary" onclick="saveSettingsPage()">Save Settings</button>
+            </section>
+
+            <section class="panel danger-panel">
+                <h2>Danger Zone</h2>
+                <p class="muted">This will remove all your tasks and habits for your account.</p>
+                <button class="btn danger" onclick="resetMyData()">Reset My Data</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

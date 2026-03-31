@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Habit Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">FlowTrack</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-link" data-nav="dashboard">Dashboard</a>
+                <a href="tasks.html" class="nav-link" data-nav="tasks">Tasks</a>
+                <a href="habits.html" class="nav-link" data-nav="habits">Habits</a>
+                <a href="analytics.html" class="nav-link" data-nav="analytics">Analytics</a>
+                <a href="settings.html" class="nav-link" data-nav="settings">Settings</a>
+            </nav>
+            <button class="btn ghost" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>Welcome, <span id="userDisplay"></span></h1>
+                <p class="muted">Track tasks, habits, and your consistency every day.</p>
+            </header>
+
+            <section class="stats-grid">
+                <div class="panel stat-card">
+                    <h3>Total Tasks</h3>
+                    <p id="metricTotalTasks" class="stat-value">0</p>
+                </div>
+                <div class="panel stat-card">
+                    <h3>Tasks Completed</h3>
+                    <p id="metricCompletedTasks" class="stat-value">0</p>
+                </div>
+                <div class="panel stat-card">
+                    <h3>Active Habits</h3>
+                    <p id="metricHabits" class="stat-value">0</p>
+                </div>
+                <div class="panel stat-card">
+                    <h3>Best Streak</h3>
+                    <p id="metricBestStreak" class="stat-value">0</p>
+                </div>
+            </section>
+
+            <section class="split-grid">
+                <div class="panel">
+                    <h2>Quick Add Task</h2>
+                    <div class="grid-2">
+                        <input type="text" id="quickTaskName" placeholder="Task name">
+                        <input type="date" id="quickTaskDeadline">
+                    </div>
+                    <div class="grid-3">
+                        <select id="quickTaskPriority">
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <select id="quickTaskCategory">
+                            <option value="Study">Study</option>
+                            <option value="Work">Work</option>
+                            <option value="Health">Health</option>
+                            <option value="Personal">Personal</option>
+                        </select>
+                        <button class="btn primary" onclick="addQuickTask()">Add</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Weekly Progress</h2>
+                    <div class="progress-track">
+                        <div id="weeklyProgressFill" class="progress-fill"></div>
+                    </div>
+                    <p id="weeklyProgressText" class="muted">0% completion this week</p>
+                </div>
+            </section>
+
+            <section class="split-grid">
+                <div class="panel">
+                    <h2>Tasks Due Today</h2>
+                    <ul id="todayTaskList" class="item-list"></ul>
+                </div>
+                <div class="panel">
+                    <h2>Habit Summary</h2>
+                    <ul id="habitSummaryList" class="item-list"></ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

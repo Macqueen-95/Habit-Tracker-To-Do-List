@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - Habit Tracker & To Do List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Create Account</h1>
+            <p class="subtitle">Join us and start tracking your habits today</p>
+            
+            <div class="form-group">
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" placeholder="Choose a username" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" placeholder="Create a password" class="form-input">
+            </div>
+
+            <button class="btn btn-primary" onclick="register()">Register</button>
+
+            <p class="auth-link">Already have an account? <a href="index.html">Login here</a></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function register() {
+            let username = document.getElementById("registerUsername").value.trim();
+            let password = document.getElementById("registerPassword").value.trim();
+
+            if (!username || !password) {
+                showMessage("Please enter username and password.", "error");
+                return;
+            }
+
+            if (username.length < 3) {
+                showMessage("Username must be at least 3 characters.", "error");
+                return;
+            }
+
+            if (password.length < 4) {
+                showMessage("Password must be at least 4 characters.", "error");
+                return;
+            }
+
+            let users = getUsers();
+
+            if (users.find(user => user.username === username)) {
+                showMessage("Username already exists! Try another.", "error");
+                return;
+            }
+
+            users.push({
+                username: username,
+                password: password,
+                tasks: [],
+                habits: []
+            });
+
+            saveUsers(users);
+            showMessage("Registration successful! Redirecting to login...", "success");
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 1500);
+        }
+
+        function showMessage(msg, type) {
+            let messageDiv = document.getElementById("message") || createMessageDiv();
+            messageDiv.textContent = msg;
+            messageDiv.className = "message " + type;
+            messageDiv.style.display = "block";
+            
+            if (type === "success") {
+                setTimeout(() => {
+                    messageDiv.style.display = "none";
+                }, 1500);
+            }
+        }
+
+        function createMessageDiv() {
+            let div = document.createElement("div");
+            div.id = "message";
+            document.querySelector(".auth-card").insertBefore(div, document.querySelector("h1"));
+            return div;
+        }
+    </script>
+</body>
+</html>

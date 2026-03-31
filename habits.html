@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Habits - Habit Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="habits">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">FlowTrack</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-link" data-nav="dashboard">Dashboard</a>
+                <a href="tasks.html" class="nav-link" data-nav="tasks">Tasks</a>
+                <a href="habits.html" class="nav-link" data-nav="habits">Habits</a>
+                <a href="analytics.html" class="nav-link" data-nav="analytics">Analytics</a>
+                <a href="settings.html" class="nav-link" data-nav="settings">Settings</a>
+            </nav>
+            <button class="btn ghost" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>Habit Tracker</h1>
+                <p class="muted">Build consistency with daily check-ins.</p>
+            </header>
+
+            <section class="panel">
+                <h2>Add Habit</h2>
+                <div class="grid-2">
+                    <input type="text" id="habitNameInput" placeholder="Habit name">
+                    <button class="btn primary" onclick="addHabitFromHabitsPage()">Add Habit</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>My Habits</h2>
+                <ul id="habitsPageList" class="item-list"></ul>
+            </section>
+
+            <section class="panel">
+                <div class="row-between">
+                    <h2>Consistency Heatmap</h2>
+                    <span class="muted">Last 365 days</span>
+                </div>
+                <div id="heatmapGrid" class="heatmap-grid"></div>
+                <div class="heatmap-legend">
+                    <span>Less</span>
+                    <div class="box level-0"></div>
+                    <div class="box level-1"></div>
+                    <div class="box level-2"></div>
+                    <div class="box level-3"></div>
+                    <div class="box level-4"></div>
+                    <span>More</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
