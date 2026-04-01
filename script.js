@@ -395,23 +395,79 @@ function renderHeatmap() {
 
     target.innerHTML = "";
 
-    for (let i = 364; i >= 0; i -= 1) {
-        const day = new Date();
-        day.setDate(day.getDate() - i);
-        const key = day.toISOString().split("T")[0];
-        const value = heat[key] || 0;
+    // Generate calendar for last 12 months
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setFullYear(startDate.getFullYear() - 1);
 
-        let level = 0;
-        if (value > 0 && value <= Math.ceil(maxValue * 0.25)) level = 1;
-        else if (value <= Math.ceil(maxValue * 0.5)) level = 2;
-        else if (value <= Math.ceil(maxValue * 0.75)) level = 3;
-        else if (value > 0) level = 4;
+    const monthsContainer = document.createElement("div");
+    monthsContainer.className = "calendar-container";
 
-        const box = document.createElement("div");
-        box.className = "heat-cell level-" + level;
-        box.title = key + " | Completed habits: " + value;
-        target.appendChild(box);
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+        const monthDate = new Date(startDate);
+        monthDate.setMonth(monthDate.getMonth() + i);
+        months.push(monthDate);
     }
+
+    months.forEach((monthDate) => {
+        const monthContainer = document.createElement("div");
+        monthContainer.className = "calendar-month";
+
+        const monthLabel = document.createElement("h4");
+        monthLabel.className = "month-label";
+        const monthName = monthDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+        monthLabel.textContent = monthName;
+        monthContainer.appendChild(monthLabel);
+
+        const grid = document.createElement("div");
+        grid.className = "calendar-grid";
+
+        // Week day headers
+        const weekLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        weekLabels.forEach((day) => {
+            const label = document.createElement("div");
+            label.className = "week-label";
+            label.textContent = day;
+            grid.appendChild(label);
+        });
+
+        const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+
+        // Empty cells before month starts
+        for (let i = 0; i < startingDayOfWeek; i++) {
+            const empty = document.createElement("div");
+            empty.className = "calendar-cell empty";
+            grid.appendChild(empty);
+        }
+
+        // Days in month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const cellDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), day);
+            const key = cellDate.toISOString().split("T")[0];
+            const value = heat[key] || 0;
+
+            let level = 0;
+            if (value > 0 && value <= Math.ceil(maxValue * 0.25)) level = 1;
+            else if (value <= Math.ceil(maxValue * 0.5)) level = 2;
+            else if (value <= Math.ceil(maxValue * 0.75)) level = 3;
+            else if (value > 0) level = 4;
+
+            const box = document.createElement("div");
+            box.className = "calendar-cell level-" + level;
+            box.title = key + " | Completed: " + value + " habit(s)";
+            box.textContent = day;
+            grid.appendChild(box);
+        }
+
+        monthContainer.appendChild(grid);
+        monthsContainer.appendChild(monthContainer);
+    });
+
+    target.appendChild(monthsContainer);
 }
 
 function getWeekDates() {
