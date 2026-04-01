@@ -13,6 +13,7 @@
                 <a href="tasks.html" class="nav-link" data-nav="tasks">Tasks</a>
                 <a href="habits.html" class="nav-link" data-nav="habits">Habits</a>
                 <a href="analytics.html" class="nav-link" data-nav="analytics">Analytics</a>
+                <a href="calendar.html" class="nav-link" data-nav="calendar">Calendar</a>
                 <a href="settings.html" class="nav-link" data-nav="settings">Settings</a>
             </nav>
             <button class="btn ghost" onclick="logout()">Logout</button>
@@ -43,8 +44,27 @@
                         <label for="dailyGoalInput">Daily Goal (tasks)</label>
                         <input type="number" id="dailyGoalInput" min="1" max="20">
                     </div>
+                    <div>
+                        <label for="reminderEnabledInput">Enable Daily Reminder</label>
+                        <input type="checkbox" id="reminderEnabledInput">
+                    </div>
+                    <div>
+                        <label for="reminderTimeInput">Reminder Time</label>
+                        <input type="time" id="reminderTimeInput">
+                    </div>
+                    <div>
+                        <label for="freezeTokensInput">Freeze Tokens</label>
+                        <input type="number" id="freezeTokensInput" min="0" max="30">
+                    </div>
                 </div>
                 <button class="btn primary" onclick="saveSettingsPage()">Save Settings</button>
+                <button class="btn ghost" onclick="testNotificationNow()">Test Notification</button>
+            </section>
+
+            <section class="panel">
+                <h2>Demo / Test Mode</h2>
+                <p class="muted">Load pre-filled tasks and habits for project presentation.</p>
+                <button class="btn primary" onclick="seedDemoData()">Load Demo Data</button>
             </section>
 
             <section class="panel danger-panel">

@@ -24,17 +24,34 @@ function todayString() {
     return new Date().toISOString().split("T")[0];
 }
 
+function dateOffsetString(offsetDays) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().split("T")[0];
+}
+
+function timeNowHHMM() {
+    const now = new Date();
+    return String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+}
+
 function ensureUserShape(user) {
     if (!Array.isArray(user.tasks)) user.tasks = [];
     if (!Array.isArray(user.habits)) user.habits = [];
     if (!user.settings) {
         user.settings = {
             theme: "dark",
-            dailyGoal: 5
+            dailyGoal: 5,
+            reminderEnabled: false,
+            reminderTime: "20:00",
+            freezeTokens: 2
         };
     }
     if (!user.settings.theme) user.settings.theme = "dark";
     if (!user.settings.dailyGoal) user.settings.dailyGoal = 5;
+    if (typeof user.settings.reminderEnabled !== "boolean") user.settings.reminderEnabled = false;
+    if (!user.settings.reminderTime) user.settings.reminderTime = "20:00";
+    if (typeof user.settings.freezeTokens !== "number") user.settings.freezeTokens = 2;
 
     user.tasks = user.tasks.map((task) => ({
         id: task.id || Date.now() + Math.floor(Math.random() * 10000),
@@ -51,10 +68,210 @@ function ensureUserShape(user) {
         id: habit.id || Date.now() + Math.floor(Math.random() * 10000),
         name: habit.name || "Untitled Habit",
         history: habit.history || (habit.lastCompletedDate ? { [habit.lastCompletedDate]: 1 } : {}),
+        frozenDates: habit.frozenDates || {},
         streak: habit.streak || 0,
         longestStreak: habit.longestStreak || habit.streak || 0,
         createdAt: habit.createdAt || new Date().toISOString()
     }));
+}
+
+function getHabitCompletionMap(habit) {
+    const map = {};
+    Object.keys(habit.history || {}).forEach((k) => {
+        map[k] = 1;
+    });
+    Object.keys(habit.frozenDates || {}).forEach((k) => {
+        map[k] = 1;
+    });
+    return map;
+}
+
+function triggerConfetti() {
+    if (document.getElementById("confettiOverlay")) return;
+
+    const overlay = document.createElement("div");
+    overlay.id = "confettiOverlay";
+    overlay.className = "confetti-overlay";
+
+    const colors = ["#6366f1", "#06b6d4", "#22c55e", "#f59e0b", "#ef4444", "#a78bfa"];
+    for (let i = 0; i < 120; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.style.left = Math.random() * 100 + "%";
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 0.7 + "s";
+        piece.style.animationDuration = 1.8 + Math.random() * 1.2 + "s";
+        overlay.appendChild(piece);
+    }
+
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 3500);
+}
+
+function checkAndCelebrateDailyCompletion(user) {
+    const today = todayString();
+    const tasksToday = user.tasks.filter((t) => t.deadline === today);
+    const allTasksDone = tasksToday.length > 0 && tasksToday.every((t) => t.completed);
+
+    const allHabitsDone = user.habits.length > 0 && user.habits.every((h) => {
+        const completionMap = getHabitCompletionMap(h);
+        return !!completionMap[today];
+    });
+
+    if (!allTasksDone || !allHabitsDone) return;
+
+    const key = "confettiShown_" + user.username + "_" + today;
+    if (localStorage.getItem(key)) return;
+
+    localStorage.setItem(key, "1");
+    triggerConfetti();
+}
+
+function maybeShowReminder(user) {
+    if (!user.settings.reminderEnabled) return;
+    if (timeNowHHMM() !== user.settings.reminderTime) return;
+
+    const today = todayString();
+    const key = "reminderShown_" + user.username + "_" + today + "_" + user.settings.reminderTime;
+    if (localStorage.getItem(key)) return;
+
+    const pending = user.tasks.filter((task) => task.deadline === today && !task.completed);
+    const habitsPending = user.habits.filter((habit) => {
+        const completionMap = getHabitCompletionMap(habit);
+        return !completionMap[today];
+    });
+
+    if (!pending.length && !habitsPending.length) {
+        localStorage.setItem(key, "1");
+        return;
+    }
+
+    const message = `You have ${pending.length} pending task(s) and ${habitsPending.length} habit(s) left today.`;
+
+    if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("FlowTrack Reminder", { body: message });
+    } else {
+        alert(message);
+    }
+
+    localStorage.setItem(key, "1");
+}
+
+function scheduleReminderCheck() {
+    if (!document.body || !document.body.dataset.page) return;
+    const page = document.body.dataset.page;
+    if (page === "index" || page === "register") return;
+
+    if (window.__flowTrackReminderTimer) return;
+    window.__flowTrackReminderTimer = setInterval(() => {
+        const state = getAppState();
+        if (!state) return;
+        maybeShowReminder(state.user);
+    }, 30000);
+}
+
+function getAtRiskHabits(user) {
+    const today = todayString();
+    const yesterday = dateOffsetString(-1);
+
+    return user.habits.filter((habit) => {
+        const completionMap = getHabitCompletionMap(habit);
+        return !!completionMap[yesterday] && !completionMap[today];
+    });
+}
+
+function useFreezeForHabit(habitId) {
+    const state = getAppState();
+    if (!state) return;
+
+    const { users, user } = state;
+    if (user.settings.freezeTokens <= 0) {
+        alert("No freeze tokens left.");
+        return;
+    }
+
+    const habit = user.habits.find((h) => h.id === Number(habitId));
+    if (!habit) return;
+
+    const today = todayString();
+    if (habit.history[today] || habit.frozenDates[today]) {
+        alert("Today is already counted for this habit.");
+        return;
+    }
+
+    habit.frozenDates[today] = 1;
+    user.settings.freezeTokens -= 1;
+
+    const streakInfo = getHabitStreakFromHistory(getHabitCompletionMap(habit));
+    habit.streak = streakInfo.current;
+    habit.longestStreak = Math.max(habit.longestStreak || 0, streakInfo.longest);
+
+    saveAppState(users);
+    refreshCurrentPage();
+}
+
+function seedDemoData() {
+    const state = getAppState();
+    if (!state) return;
+
+    const ok = confirm("Load demo data for presentation? This will replace your current tasks and habits.");
+    if (!ok) return;
+
+    const { users, user } = state;
+    const today = todayString();
+
+    const d1 = dateOffsetString(1);
+    const d2 = dateOffsetString(2);
+    const d3 = dateOffsetString(3);
+    const dNeg1 = dateOffsetString(-1);
+    const dNeg2 = dateOffsetString(-2);
+    const dNeg3 = dateOffsetString(-3);
+    const dNeg4 = dateOffsetString(-4);
+
+    user.tasks = [
+        { id: Date.now() + 1, name: "Finish Web Lab PPT", deadline: today, priority: "High", category: "Study", completed: false, completedDate: null, createdAt: new Date().toISOString() },
+        { id: Date.now() + 2, name: "Practice React Components", deadline: d1, priority: "Medium", category: "Study", completed: false, completedDate: null, createdAt: new Date().toISOString() },
+        { id: Date.now() + 3, name: "Gym Session", deadline: today, priority: "Low", category: "Health", completed: true, completedDate: today, createdAt: new Date().toISOString() },
+        { id: Date.now() + 4, name: "Update Project Documentation", deadline: d2, priority: "Medium", category: "Work", completed: false, completedDate: null, createdAt: new Date().toISOString() },
+        { id: Date.now() + 5, name: "Read DSA Notes", deadline: d3, priority: "High", category: "Study", completed: false, completedDate: null, createdAt: new Date().toISOString() }
+    ];
+
+    user.habits = [
+        {
+            id: Date.now() + 100,
+            name: "Code 1 Hour",
+            history: { [today]: 1, [dNeg1]: 1, [dNeg2]: 1, [dNeg3]: 1 },
+            frozenDates: {},
+            streak: 4,
+            longestStreak: 7,
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: Date.now() + 101,
+            name: "Drink 3L Water",
+            history: { [dNeg1]: 1, [dNeg2]: 1, [dNeg4]: 1 },
+            frozenDates: { [dNeg3]: 1 },
+            streak: 4,
+            longestStreak: 5,
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: Date.now() + 102,
+            name: "Morning Walk",
+            history: { [today]: 1, [dNeg1]: 1 },
+            frozenDates: {},
+            streak: 2,
+            longestStreak: 4,
+            createdAt: new Date().toISOString()
+        }
+    ];
+
+    user.settings.dailyGoal = 5;
+    user.settings.freezeTokens = Math.max(1, user.settings.freezeTokens || 2);
+
+    saveAppState(users);
+    alert("Demo data loaded successfully.");
+    refreshCurrentPage();
 }
 
 function requireAuth() {
@@ -134,6 +351,7 @@ function toggleTaskById(taskId) {
     task.completed = !task.completed;
     task.completedDate = task.completed ? todayString() : null;
     saveAppState(users);
+    checkAndCelebrateDailyCompletion(user);
 
     refreshCurrentPage();
 }
@@ -294,13 +512,17 @@ function toggleHabitTodayById(habitId) {
         delete habit.history[today];
     } else {
         habit.history[today] = 1;
+        if (habit.frozenDates[today]) {
+            delete habit.frozenDates[today];
+        }
     }
 
-    const streakInfo = getHabitStreakFromHistory(habit.history);
+    const streakInfo = getHabitStreakFromHistory(getHabitCompletionMap(habit));
     habit.streak = streakInfo.current;
     habit.longestStreak = streakInfo.longest;
 
     saveAppState(users);
+    checkAndCelebrateDailyCompletion(user);
     refreshCurrentPage();
 }
 
@@ -353,16 +575,18 @@ function renderHabitsList(elementId) {
     const today = todayString();
 
     user.habits.forEach((habit) => {
-        const doneToday = !!habit.history[today];
+        const doneToday = !!habit.history[today] || !!habit.frozenDates[today];
         const item = document.createElement("li");
         item.className = "habit-item " + (doneToday ? "habit-done" : "");
+        const statusText = habit.history[today] ? "Marked Today" : (habit.frozenDates[today] ? "Freeze Used Today" : "Pending Today");
         item.innerHTML = `
             <div class="item-main">
                 <p class="item-title">${habit.name}</p>
-                <p class="item-meta">Current streak: ${habit.streak} days | Longest: ${habit.longestStreak} days</p>
+                <p class="item-meta">${statusText} | Current streak: ${habit.streak} days | Longest: ${habit.longestStreak} days</p>
             </div>
             <div class="item-actions">
                 <button class="mini-btn" onclick="toggleHabitTodayById(${habit.id})">${doneToday ? "Undo Today" : "Mark Today"}</button>
+                ${!doneToday ? `<button class="mini-btn" onclick="useFreezeForHabit(${habit.id})">Use Freeze</button>` : ""}
                 <button class="mini-btn" onclick="editHabitById(${habit.id})">Edit</button>
                 <button class="mini-btn danger" onclick="deleteHabitById(${habit.id})">Delete</button>
             </div>
@@ -505,6 +729,7 @@ function renderDashboardPage() {
 
     const { user } = state;
     const summary = getAnalyticsSummary(user);
+    checkAndCelebrateDailyCompletion(user);
 
     const nameTarget = document.getElementById("userDisplay");
     if (nameTarget) nameTarget.textContent = user.username;
@@ -608,6 +833,24 @@ function addTaskFromTasksPage() {
 function renderHabitsPage() {
     renderHabitsList("habitsPageList");
     renderHeatmap();
+
+    const warning = document.getElementById("streakWarning");
+    const freezeCount = document.getElementById("freezeTokenCount");
+    const state = getAppState();
+    if (!state) return;
+
+    const riskyHabits = getAtRiskHabits(state.user);
+    if (freezeCount) freezeCount.textContent = String(state.user.settings.freezeTokens || 0);
+    if (warning) {
+        if (!riskyHabits.length) {
+            warning.innerHTML = "No streak at risk today. Keep going!";
+            warning.className = "info-strip safe";
+        } else {
+            const names = riskyHabits.slice(0, 3).map((h) => h.name).join(", ");
+            warning.innerHTML = `${riskyHabits.length} habit streak(s) at risk: ${names}`;
+            warning.className = "info-strip danger";
+        }
+    }
 }
 
 function addHabitFromHabitsPage() {
@@ -684,9 +927,15 @@ function renderSettingsPage() {
 
     const themeSelect = document.getElementById("themeSelect");
     const dailyGoalInput = document.getElementById("dailyGoalInput");
+    const reminderEnabledInput = document.getElementById("reminderEnabledInput");
+    const reminderTimeInput = document.getElementById("reminderTimeInput");
+    const freezeTokensInput = document.getElementById("freezeTokensInput");
 
     if (themeSelect) themeSelect.value = user.settings.theme || "dark";
     if (dailyGoalInput) dailyGoalInput.value = user.settings.dailyGoal || 5;
+    if (reminderEnabledInput) reminderEnabledInput.checked = !!user.settings.reminderEnabled;
+    if (reminderTimeInput) reminderTimeInput.value = user.settings.reminderTime || "20:00";
+    if (freezeTokensInput) freezeTokensInput.value = user.settings.freezeTokens || 2;
 }
 
 function saveSettingsPage() {
@@ -696,13 +945,47 @@ function saveSettingsPage() {
     const { users, user } = state;
     const theme = document.getElementById("themeSelect").value;
     const dailyGoal = Number(document.getElementById("dailyGoalInput").value || 5);
+    const reminderEnabled = !!document.getElementById("reminderEnabledInput").checked;
+    const reminderTime = document.getElementById("reminderTimeInput").value || "20:00";
+    const freezeTokens = Number(document.getElementById("freezeTokensInput").value || 2);
 
     user.settings.theme = theme;
     user.settings.dailyGoal = Math.min(20, Math.max(1, dailyGoal));
+    user.settings.reminderEnabled = reminderEnabled;
+    user.settings.reminderTime = reminderTime;
+    user.settings.freezeTokens = Math.min(30, Math.max(0, freezeTokens));
 
     saveAppState(users);
     applyTheme(theme);
+
+    if (reminderEnabled && "Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+
     alert("Settings saved.");
+}
+
+function testNotificationNow() {
+    const state = getAppState();
+    if (!state) return;
+
+    if (!("Notification" in window)) {
+        alert("Browser notifications are not supported in this browser.");
+        return;
+    }
+
+    if (Notification.permission === "granted") {
+        new Notification("FlowTrack Test", { body: "This is your reminder test notification." });
+        return;
+    }
+
+    Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+            new Notification("FlowTrack Test", { body: "Notification permission enabled successfully." });
+        } else {
+            alert("Notification permission was not granted.");
+        }
+    });
 }
 
 function resetMyData() {
@@ -721,12 +1004,111 @@ function resetMyData() {
     refreshCurrentPage();
 }
 
+function renderCalendarPage() {
+    const state = getAppState();
+    if (!state) return;
+
+    const { user } = state;
+
+    const monthSelect = document.getElementById("calendarMonthSelect");
+    const grid = document.getElementById("calendarMonthGrid");
+    const details = document.getElementById("calendarDayDetails");
+    if (!monthSelect || !grid || !details) return;
+
+    if (!monthSelect.dataset.ready) {
+        monthSelect.innerHTML = "";
+        for (let i = -6; i <= 6; i += 1) {
+            const d = new Date();
+            d.setMonth(d.getMonth() + i);
+            const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            const opt = document.createElement("option");
+            opt.value = value;
+            opt.textContent = d.toLocaleString("default", { month: "long", year: "numeric" });
+            if (i === 0) opt.selected = true;
+            monthSelect.appendChild(opt);
+        }
+        monthSelect.dataset.ready = "1";
+        monthSelect.addEventListener("change", renderCalendarPage);
+    }
+
+    const [year, month] = monthSelect.value.split("-").map(Number);
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const daysInMonth = lastDay.getDate();
+
+    grid.innerHTML = "";
+    details.innerHTML = "Select a date to view tasks and habits.";
+
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((name) => {
+        const el = document.createElement("div");
+        el.className = "calendar-weekday";
+        el.textContent = name;
+        grid.appendChild(el);
+    });
+
+    for (let i = 0; i < firstDay.getDay(); i += 1) {
+        const empty = document.createElement("div");
+        empty.className = "month-day empty";
+        grid.appendChild(empty);
+    }
+
+    for (let d = 1; d <= daysInMonth; d += 1) {
+        const dateObj = new Date(year, month - 1, d);
+        const key = dateObj.toISOString().split("T")[0];
+
+        const tasks = user.tasks.filter((task) => task.deadline === key);
+        const doneTasks = tasks.filter((task) => task.completed).length;
+        const habitsDone = user.habits.filter((habit) => {
+            const completionMap = getHabitCompletionMap(habit);
+            return !!completionMap[key];
+        }).length;
+
+        const day = document.createElement("button");
+        day.type = "button";
+        day.className = "month-day";
+        if (tasks.length || habitsDone) day.classList.add("active");
+        if (key === todayString()) day.classList.add("today");
+        day.innerHTML = `<span>${d}</span><small>${doneTasks}/${tasks.length}T • ${habitsDone}H</small>`;
+
+        day.addEventListener("click", () => {
+            const taskItems = tasks.length
+                ? tasks.map((t) => `<li>${t.name} (${t.completed ? "Done" : "Pending"})</li>`).join("")
+                : "<li>No tasks</li>";
+
+            const habitItems = user.habits
+                .filter((habit) => {
+                    const completionMap = getHabitCompletionMap(habit);
+                    return !!completionMap[key];
+                })
+                .map((h) => `<li>${h.name}</li>`)
+                .join("") || "<li>No habits completed</li>";
+
+            details.innerHTML = `
+                <h3>${key}</h3>
+                <div class="calendar-detail-grid">
+                    <div>
+                        <h4>Tasks</h4>
+                        <ul>${taskItems}</ul>
+                    </div>
+                    <div>
+                        <h4>Habits Completed</h4>
+                        <ul>${habitItems}</ul>
+                    </div>
+                </div>
+            `;
+        });
+
+        grid.appendChild(day);
+    }
+}
+
 function refreshCurrentPage() {
     const page = document.body.dataset.page;
     if (page === "dashboard") renderDashboardPage();
     if (page === "tasks") renderTasksPage();
     if (page === "habits") renderHabitsPage();
     if (page === "analytics") renderAnalyticsPage();
+    if (page === "calendar") renderCalendarPage();
     if (page === "settings") renderSettingsPage();
 }
 
@@ -737,6 +1119,8 @@ function initProtectedPage() {
     const page = document.body.dataset.page;
     setActiveNav(page);
     applyTheme(authState.user.settings.theme);
+    maybeShowReminder(authState.user);
+    scheduleReminderCheck();
 
     refreshCurrentPage();
 }
@@ -745,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!document.body || !document.body.dataset.page) return;
 
     const page = document.body.dataset.page;
-    const protectedPages = ["dashboard", "tasks", "habits", "analytics", "settings"];
+    const protectedPages = ["dashboard", "tasks", "habits", "analytics", "calendar", "settings"];
 
     if (protectedPages.includes(page)) {
         initProtectedPage();

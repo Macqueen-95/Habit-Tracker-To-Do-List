@@ -1,148 +1,131 @@
 # FlowTrack - Habit Tracker & To Do List
 
-A modern, clean web application for tracking daily tasks and building consistent habits. FlowTrack helps you stay organized, monitor your progress, and develop productive routines.
+FlowTrack is a client-side productivity web app that combines task management, habit tracking, and progress analytics in a modern multi-page interface.
 
-## Features
+The project is built with HTML, CSS, and JavaScript, uses LocalStorage for persistence, and also includes a React-based task section to demonstrate React syllabus coverage.
 
-### 📋 Task Management
-- Create, edit, and delete tasks
-- Set deadlines and priorities (High, Medium, Low)
-- Organize tasks by categories (Study, Work, Health, Personal)
-- Mark tasks as complete
-- View tasks due today on your dashboard
+## Core Features
 
-### 🎯 Habit Tracking
-- Create and manage daily habits
-- Track habit completion with streak counters
-- Monitor your best streak achievements
-- View habit summaries and progress
-
-### 📊 Analytics & Insights
-- Weekly progress tracking
-- Task completion statistics
-- Habit consistency metrics
-- Visual progress indicators
-
-### ⚙️ Personalization
-- Dark theme interface
-- Customizable daily goals
-- User-specific data storage
-- Personalized dashboard
-
-### 🔐 User Authentication
-- Secure login and registration
-- Individual user accounts
-- Session management
-
-## Technology Stack
-
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **Storage**: LocalStorage for client-side data persistence
-- **Architecture**: Single Page Application (SPA) design
-
-## Getting Started
-
-### Prerequisites
-- A modern web browser (Chrome, Firefox, Safari, Edge)
-- No server or installation required!
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd "Habit Tracker & To Do List"
-```
-
-2. Open `index.html` in your web browser:
-```bash
-open index.html
-```
-Or simply double-click the `index.html` file.
-
-### First Time Setup
-
-1. Navigate to the registration page
-2. Create a new account with a username and password
-3. Login with your credentials
-4. Start adding tasks and habits!
-
-## Usage
+### Authentication
+- Register and login with username and password
+- User-wise data isolation using LocalStorage
 
 ### Dashboard
-The main dashboard provides:
-- Quick overview of your statistics
-- Quick task creation
-- Weekly progress tracker
-- Today's tasks and habit summary
+- Quick stats (total tasks, completed tasks, habits, best streak)
+- Quick add task form
+- Tasks due today
+- Habit summary
+- Weekly completion progress bar
 
-### Tasks Page
-- View all your tasks
-- Filter by completion status
-- Add new tasks with detailed information
-- Edit or delete existing tasks
+### Tasks
+- Add, edit, delete tasks
+- Deadline, priority, and category support
+- Mark complete / undo
+- Filter by all, pending, completed, high-priority
+- React Task Board section (search, filter, quick stats, toggle)
 
-### Habits Page
-- Manage your daily habits
-- Track daily completions
-- View current and best streaks
-- Monitor consistency
+### Habits
+- Add, edit, delete habits
+- Mark today completion
+- Current streak and longest streak tracking
+- Calendar-style consistency heatmap (LeetCode-inspired)
+- Streak at risk warning
+- Freeze token support to protect streaks
 
 ### Analytics
-- Visualize your productivity trends
-- Track task completion rates
-- Monitor habit consistency over time
+- Completion ring for task completion percentage
+- Weekly productivity bar graph
+- Habit streak summary list
+
+### Calendar
+- Month-wise planner view
+- Click any day to see tasks and completed habits
 
 ### Settings
-- Update your preferences
-- Customize daily goals
-- Manage account settings
+- Theme switch (dark/light)
+- Daily goal setting
+- Reminder enable/disable and time setup
+- Test notification button
+- Freeze token management
+- Reset account data
+- Demo mode data seeding for presentation
 
-## File Structure
+### Bonus UX Features
+- Confetti celebration when all today's tasks and habits are completed
+- Responsive layout across desktop/mobile
+- Animated UI and improved navigation
+
+## Tech Stack
+
+- HTML5
+- CSS3
+- JavaScript (Vanilla)
+- React (CDN-based component on Tasks page)
+- Browser LocalStorage
+- Browser Notifications API
+
+## Project Structure
 
 ```
 .
 ├── index.html          # Login page
-├── register.html       # Registration page
-├── dashboard.html      # Main dashboard
-├── tasks.html          # Task management page
-├── habits.html         # Habit tracking page
-├── analytics.html      # Analytics and statistics
-├── settings.html       # User settings
-├── script.js           # Application logic
-└── style.css          # Styling and theme
+├── register.html       # Register page
+├── dashboard.html      # Dashboard overview
+├── tasks.html          # Task management + React Task Board
+├── habits.html         # Habit manager + consistency calendar heatmap
+├── analytics.html      # Charts and progress insights
+├── calendar.html       # Month-wise planner view
+├── settings.html       # Theme, reminders, demo mode, reset
+├── script.js           # App logic and page rendering
+└── style.css           # Global styling and responsive UI
 ```
 
-## Data Storage
+## How to Run
 
-All user data is stored locally in your browser using LocalStorage. This means:
-- ✅ No server required
-- ✅ Fast and responsive
-- ✅ Works offline
-- ⚠️ Data is browser-specific
-- ⚠️ Clearing browser data will delete your information
+1. Open the project folder.
+2. Open `index.html` in a browser.
+3. Register a new user and login.
+4. Use sidebar navigation to explore all pages.
 
-## Browser Compatibility
+No backend or installation is required.
 
-FlowTrack works on all modern browsers:
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+## Data Persistence
 
-## Contributing
+Data is stored in LocalStorage and includes:
+- user accounts
+- tasks
+- habits and streak history
+- freeze tokens
+- reminder settings
+- theme and daily goal
 
-This is a college project, but suggestions and improvements are welcome!
+Note: Clearing browser data removes saved project data.
+
+## Demo Flow (For Viva/Review)
+
+1. Login and show Dashboard metrics.
+2. Add 2 tasks (different priorities) and mark one completed.
+3. Go to Habits, add a habit, mark today, show streak update.
+4. Show heatmap and streak at-risk + freeze token usage.
+5. Open Calendar page and click a day to show details.
+6. Open Analytics page and explain ring + weekly bars.
+7. Open Settings:
+	- change theme
+	- enable reminder + test notification
+	- load demo data for quick full showcase
+8. Complete today's pending items to trigger confetti.
+
+## Educational Value
+
+This project demonstrates:
+- DOM manipulation
+- modular page rendering
+- data modeling in LocalStorage
+- responsive UI/UX design
+- simple analytics visualization
+- browser APIs (Notifications)
+- React integration in an existing non-React codebase
 
 ## License
 
-This project is created for educational purposes.
-
-## Author
-
-Developed as part of a Web Development course project.
-
-## Acknowledgments
-
-- Modern UI design inspired by contemporary productivity apps
-- Built with vanilla JavaScript for educational purposes
+This project is developed for academic/educational use.

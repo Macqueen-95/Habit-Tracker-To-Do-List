@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Analytics - Habit Tracker</title>
+    <title>Calendar - Habit Tracker</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body data-page="analytics">
+<body data-page="calendar">
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand">FlowTrack</div>
@@ -21,28 +21,21 @@
 
         <main class="content">
             <header class="page-header">
-                <h1>Analytics</h1>
-                <p class="muted">Visual overview of productivity and consistency.</p>
+                <h1>Calendar View</h1>
+                <p class="muted">See tasks and habits month-wise like a planner.</p>
             </header>
 
-            <section class="split-grid">
-                <div class="panel ring-panel">
-                    <h2>Task Completion</h2>
-                    <div class="ring-wrap">
-                        <div id="completionRing" class="progress-ring" style="--percent: 0;"></div>
-                        <p id="completionRingText" class="ring-label">0%</p>
-                    </div>
+            <section class="panel">
+                <div class="row-between">
+                    <h2>Monthly Planner</h2>
+                    <select id="calendarMonthSelect" class="small-select"></select>
                 </div>
-
-                <div class="panel">
-                    <h2>Current Streaks</h2>
-                    <ul id="streakList" class="item-list"></ul>
-                </div>
+                <div id="calendarMonthGrid" class="month-grid"></div>
             </section>
 
             <section class="panel">
-                <h2>Weekly Productivity</h2>
-                <div id="weeklyBars" class="bars-wrap"></div>
+                <h2>Day Details</h2>
+                <div id="calendarDayDetails" class="calendar-day-details">Select a date to view tasks and habits.</div>
             </section>
         </main>
     </div>
