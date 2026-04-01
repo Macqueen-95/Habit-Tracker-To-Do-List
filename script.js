@@ -900,15 +900,26 @@ function renderAnalyticsPage() {
     const bars = document.getElementById("weeklyBars");
     if (bars) {
         bars.innerHTML = "";
+        const maxDailyScore = Math.max(
+            1,
+            ...weekDates.map((dateKey) => {
+                const taskScore = user.tasks.filter((task) => task.completedDate === dateKey).length;
+                const habitScore = user.habits.filter((habit) => habit.history[dateKey]).length;
+                return taskScore + habitScore;
+            })
+        );
+
         weekDates.forEach((dateKey) => {
             const taskScore = user.tasks.filter((task) => task.completedDate === dateKey).length;
             const habitScore = user.habits.filter((habit) => habit.history[dateKey]).length;
             const score = taskScore + habitScore;
+            const heightPx = Math.max(8, Math.round((score / maxDailyScore) * 130));
 
             const bar = document.createElement("div");
             bar.className = "bar-col";
             bar.innerHTML = `
-                <div class="bar" style="height:${Math.min(100, score * 15)}%"></div>
+                <span class="bar-score">${score}</span>
+                <div class="bar" style="height:${heightPx}px"></div>
                 <span>${dateKey.slice(5)}</span>
             `;
             bars.appendChild(bar);

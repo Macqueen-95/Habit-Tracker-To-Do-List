@@ -699,15 +699,23 @@ select:focus-visible {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
     gap: 6px;
     flex: 1;
+    min-height: 150px;
 }
 
 .bar {
     width: 100%;
-    min-height: 6px;
+    min-height: 8px;
     border-radius: 10px 10px 0 0;
     background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+
+.bar-score {
+    font-size: 0.78rem;
+    color: var(--text);
+    font-weight: 600;
 }
 
 .bar-col span {
